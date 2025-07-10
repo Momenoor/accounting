@@ -46,10 +46,12 @@ class JournalEntryResource extends Resource
                             ->preload()
                             ->required(),
                         Forms\Components\TextInput::make('debit')
-                            ->numeric()
+                            ->currencyMask()
+                            ->prefix('AED')
                             ->default(0),
                         Forms\Components\TextInput::make('credit')
-                            ->numeric()
+                            ->currencyMask()
+                            ->prefix('AED')
                             ->default(0),
                         Forms\Components\Textarea::make('memo')
                             ->maxLength(65535),

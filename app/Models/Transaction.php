@@ -10,6 +10,12 @@ class Transaction extends Model
     protected $fillable = [
         'journal_entry_id', 'account_id', 'debit', 'credit', 'memo'
     ];
+
+    protected $casts = [
+        'debit' => 'float',
+        'credit' => 'float',
+    ];
+
     public function journalEntry(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);

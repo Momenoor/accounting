@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Exports\AccountExporter;
 use App\Filament\Resources\AccountResource\Pages;
 use App\Filament\Resources\AccountResource\RelationManagers;
 use App\Models\Account;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -45,6 +47,7 @@ class AccountResource extends Resource
                     ->preload(),
                 Forms\Components\TextInput::make('opening_balance')
                     ->numeric()
+                    ->readonly()
                     ->default(0),
                 Forms\Components\Textarea::make('description')
                     ->maxLength(65535),
@@ -54,12 +57,14 @@ class AccountResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->paginated(false)
             ->columns([
                 Tables\Columns\TextColumn::make('code'),
-                Tables\Columns\TextColumn::make('name'),
+                Tables\Columns\TextColumn::make('name')
+                    ->formatStateUsing(fn($state, $record) => str_repeat('— ', $record->depth) . $state),
                 Tables\Columns\TextColumn::make('type')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'asset' => 'success',
                         'liability' => 'danger',
                         'equity' => 'primary',
@@ -67,8 +72,19 @@ class AccountResource extends Resource
                         'expense' => 'warning',
                     }),
                 Tables\Columns\TextColumn::make('current_balance')
-                    ->money(),
+                    ->formatStateUsing(function ($state) {
+                        return $state < 0
+                            ? '(' . number_format(abs((float)$state), 2) . ')'
+                            : number_format((float)$state, 2);
+                    })
+                    ->currency('AED')
+                    ->color(fn($state) => $state < 0 ? Color::Red : ($state > 0 ? Color::Green : Color::Gray)),
                 Tables\Columns\TextColumn::make('parent.name'),
+            ])
+            ->pushHeaderActions([
+                Tables\Actions\Action::make('Opening Balance Setup')
+                    ->color(Color::Green)
+                    ->url(route('filament.admin.pages.opening-balance-setup')),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
@@ -103,5 +119,10 @@ class AccountResource extends Resource
             'create' => Pages\CreateAccount::route('/create'),
             'edit' => Pages\EditAccount::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->withDepth()->defaultOrder(); // Orders by lft (tree structure)
     }
 }

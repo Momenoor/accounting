@@ -13,6 +13,12 @@ class BankAccount extends Model
         'opening_balance', 'current_balance', 'account_id', 'is_active'
     ];
 
+    protected $casts = [
+        'opening_balance' => 'float',
+        'current_balance' => 'float',
+        'is_active' => 'boolean',
+    ];
+
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);

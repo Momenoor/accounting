@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\TaxRate;
 use App\Services\BillService;
 use App\Services\InventoryService;
+use App\Services\PaymentService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -88,17 +89,18 @@ class BillResource extends Resource
                                             $set('description', $product->name);
                                             $set('account_id', $product->inventory_account_id);
                                         }
+
                                     }),
 
                                 Forms\Components\TextInput::make('quantity')
                                     ->numeric()
-                                    ->default(1)
                                     ->required()
                                     ->live(onBlur: true)
                                     ->minValue(0.01),
 
                                 Forms\Components\TextInput::make('unit_price')
-                                    ->numeric()
+                                    ->currencyMask()
+                                    ->prefix('AED')
                                     ->required()
                                     ->live(onBlur: true)
                                     ->minValue(0),
@@ -126,20 +128,29 @@ class BillResource extends Resource
                     ->columns(3)
                     ->schema([
                         Forms\Components\TextInput::make('subtotal')
-                            ->numeric()
                             ->readOnly()
+                            ->dehydrateStateUsing(function ($state) {
+                                return is_numeric($state) ? $state : str_replace(',', '', $state);
+                            })
+                            ->currencyMask()
                             ->prefix('AED')
                             ->columnStart(1),
 
                         Forms\Components\TextInput::make('tax_amount')
-                            ->numeric()
                             ->readOnly()
+                            ->dehydrateStateUsing(function ($state) {
+                                return is_numeric($state) ? $state : str_replace(',', '', $state);
+                            })
+                            ->currencyMask()
                             ->prefix('AED')
                             ->columnStart(1),
 
                         Forms\Components\TextInput::make('total_amount')
-                            ->numeric()
                             ->readOnly()
+                            ->dehydrateStateUsing(function ($state) {
+                                return is_numeric($state) ? $state : str_replace(',', '', $state);
+                            })
+                            ->currencyMask()
                             ->prefix('AED')
                             ->columnStart(1),
                     ]),
@@ -158,7 +169,7 @@ class BillResource extends Resource
         $taxAmount = 0;
 
         foreach ($items as $item) {
-            $itemTotal = ($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0);
+            $itemTotal = ($item['quantity'] ?? 0) * (empty($item['unit_price'])?:0);
             $subtotal += $itemTotal;
 
             if (!empty($item['tax_rate_id'])) {
@@ -172,39 +183,6 @@ class BillResource extends Resource
         $set('subtotal', number_format($subtotal, 2));
         $set('tax_amount', number_format($taxAmount, 2));
         $set('total_amount', number_format($subtotal + $taxAmount, 2));
-    }
-
-    protected function saveRelationships(Bill $bill, $state): void
-    {
-
-        DB::transaction(function () use ($bill, $state) {
-//            $items = collect($state['items'])->map(function ($item) {
-//                $itemTotal = $item['quantity'] * $item['unit_price'];
-//                $taxRate = TaxRate::find($item['tax_rate_id'] ?? null);
-//
-//                return [
-//                    'product_id' => $item['product_id'],
-//                    'quantity' => $item['quantity'],
-//                    'unit_price' => $item['unit_price'],
-//                    'tax_rate_id' => $item['tax_rate_id'],
-//                    'tax_rate' => $taxRate ? $taxRate->rate : null,
-//                    'description' => $item['description'],
-//                    'total' => $taxRate ?
-//                        $itemTotal + ($itemTotal * $taxRate->rate / 100) :
-//                        $itemTotal,
-//                    'account_id' => Product::find($item['product_id'])->inventory_account_id,
-//                ];
-//            });
-//
-//            $bill->items()->createMany($items->toArray());
-
-            // Process inventory and accounting
-            $inventoryService = app(InventoryService::class);
-            $inventoryService->processBillInventory($bill);
-
-            $accountingService = app(BillService::class);
-            $accountingService->createJournalEntryForBill($bill);
-        });
     }
 
     public static function table(Table $table): Table
@@ -228,7 +206,7 @@ class BillResource extends Resource
                         'cancelled' => 'danger',
                     }),
                 Tables\Columns\TextColumn::make('total_amount')
-                    ->money(),
+                    ->money('AED'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -243,36 +221,65 @@ class BillResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('mark_as_paid')
+                Tables\Actions\Action::make('Pay')
+                    ->button()
                     ->icon('heroicon-o-banknotes')
-                    ->action(function (Bill $record) {
-                        $record->update(['status' => 'paid']);
-                        // Create journal entry for payment
-                        $journalEntry = JournalEntry::create([
-                            'entry_date' => now(),
-                            'description' => 'Payment for invoice ' . $record->bill_number,
-                            'fiscal_year_id' => FiscalYear::current()->id,
-                        ]);
+                    ->form(
+                        [
+                            Forms\Components\Select::make('bank_account_id')
+                                ->relationship('bankTransactions.bankAccount', 'name')
+                                ->required()
+                                ->searchable()
+                                ->preload(),
 
-                        $journalEntry->transactions()->createMany([
-                            [
-                                'account_id' => Account::where('code', '2200')->first()->id, // Accounts payable
-                                'debit' => $record->total_amount,
-                                'credit' => 0,
-                            ],
-                            [
-                                'account_id' => Account::where('code', '1100')->first()->id, // Cash account
-                                'debit' => 0,
-                                'credit' => $record->total_amount,
-                            ],
-                        ]);
+                            Forms\Components\TextInput::make('amount')
+                                ->required()
+                                ->minValue(0.01)
+                                ->default(fn(Bill $record) => number_format($record->total_amount - $record->bankTransactions->sum('amount'), 2))
+                                ->maxValue(fn(Bill $record) => number_format($record->total_amount - $record->bankTransactions->sum('amount'), 2)),
 
+                            Forms\Components\DatePicker::make('transaction_date')
+                                ->required()
+                                ->default(now()),
+
+                            Forms\Components\TextInput::make('type')
+                                ->readOnly()
+                                ->required()
+                                ->hidden()
+                                ->default('payment'),
+
+                            Forms\Components\TextInput::make('reference')
+                                ->maxLength(255),
+
+                            Forms\Components\Textarea::make('description')
+                                ->maxLength(255)
+                                ->columnSpanFull(),
+                        ]
+                    )
+                    ->action(function (array $data, Bill $bill) {
+                        $bill->update([
+                            'status' => $data['amount'] < $bill->total_amount ? 'received' : 'paid',
+                        ]);
+                        $paymentDate = [
+                            'transaction_date' => now(),
+                            'bank_account_id' => $data['bank_account_id'],
+                            'amount' => $data['amount'],
+                            'type' => 'outgoing',
+                            'reference' => $data['reference'] ?? "PMT-{$bill->bill_number}",
+                            'description' => $data['description'] ?? "Payment for bill# {$bill->bill_number}",
+                            'transactionable' => $bill,
+                        ];
+                        app(PaymentService::class)->recordPayment($paymentDate);
                         Notification::make()
-                            ->title('Bill marked as paid and accounting entries created')
+                            ->title('Bill paid and accounting entries created')
                             ->success()
                             ->send();
+                        return redirect()->to(BillResource::getUrl('index'));
                     })
-                    ->visible(fn(Bill $record): bool => $record->status !== 'paid'),
+                    ->visible(fn(Bill $bill): bool => $bill->status !== 'paid')
+                    ->modalHeading(fn(Bill $bill) => "Pay Bill #{$bill->bill_number}")
+                    ->modalDescription('Record a payment for this bill')
+                    ->modalSubmitActionLabel('Process Payment'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

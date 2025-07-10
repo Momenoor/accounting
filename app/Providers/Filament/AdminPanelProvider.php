@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use Filament\Forms\Components\Select;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -10,6 +11,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Tables\Table;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -55,5 +57,11 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->databaseTransactions();
+    }
+
+    public function boot(): void
+    {
+
+        Select::configureUsing(fn(Select $select) => $select->native(false));
     }
 }

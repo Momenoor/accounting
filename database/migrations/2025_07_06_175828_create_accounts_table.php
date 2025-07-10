@@ -12,15 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('accounts', function (Blueprint $table) {
-            $table->bigInteger('id')->unique()->unsigned()->primary();
+            $table->id();
             $table->string('name');
             $table->string('code')->unique();
             $table->enum('type', ['asset', 'liability', 'equity', 'revenue', 'expense']);
             $table->decimal('opening_balance', 15, 2)->default(0);
             $table->decimal('current_balance', 15, 2)->default(0);
-            $table->foreignId('parent_id')->nullable()->constrained('accounts');
             $table->boolean('is_system_account')->default(false);
             $table->text('description')->nullable();
+            $table->nestedSet();
             $table->timestamps();
         });
     }

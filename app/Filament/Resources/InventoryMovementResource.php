@@ -109,14 +109,15 @@ class InventoryMovementResource extends Resource
                     }),
 
                 Tables\Columns\TextColumn::make('unit_cost')
-                    ->money()
+                    ->money('AED')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('total_cost')
-                    ->money()
+                    ->money('AED')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('reference_type')
+                    ->label('Ref Type')
                     ->formatStateUsing(fn(?string $state): string => $state ? class_basename($state) : 'Manual'),
 
                 Tables\Columns\TextColumn::make('reference_id')

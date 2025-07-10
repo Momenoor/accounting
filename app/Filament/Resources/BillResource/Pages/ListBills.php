@@ -16,4 +16,10 @@ class ListBills extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+    protected function getTableQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getTableQuery()
+            ->whereHas('items'); // Only bills with items
+    }
 }

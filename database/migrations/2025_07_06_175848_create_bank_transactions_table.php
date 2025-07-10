@@ -19,8 +19,9 @@ return new class extends Migration
             $table->string('reference')->nullable();
             $table->decimal('amount', 15, 2);
             $table->enum('type', ['deposit', 'withdrawal', 'fee', 'interest']);
+            $table->string('transactionable_type')->nullable();
+            $table->unsignedBigInteger('transactionable_id')->nullable();
             $table->boolean('is_reconciled')->default(false);
-            $table->foreignId('transaction_id')->nullable()->constrained('transactions');
             $table->timestamps();
         });
     }

@@ -4,10 +4,12 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\BankAccountResource\Pages;
 use App\Filament\Resources\BankAccountResource\RelationManagers;
+use App\Models\Account;
 use App\Models\BankAccount;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,9 +35,16 @@ class BankAccountResource extends Resource
                     ->relationship('account', 'name')
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->live(onBlur: true)
+                    ->required()
+                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                        $set('opening_balance', $set('opening_balance', Account::find($state)?->current_balance ?? 0));
+                    }),
                 Forms\Components\TextInput::make('opening_balance')
-                    ->numeric()
+                    ->currencyMask()
+                    ->reactive()
+                    ->prefix('AED')
+                    ->readonly()
                     ->required(),
                 Forms\Components\TextInput::make('currency')
                     ->default('AED'),
@@ -52,14 +61,15 @@ class BankAccountResource extends Resource
                 Tables\Columns\TextColumn::make('bank_name'),
                 Tables\Columns\TextColumn::make('account_number'),
                 Tables\Columns\TextColumn::make('current_balance')
-                    ->money(fn ($record) => $record->currency),
+                    ->money(fn($record) => $record->currency)
+                    ->color(fn($state) => $state > 0 ?: Color::Red),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('reconcile')
-                    ->url(fn ($record) => BankAccountResource::getUrl('reconcile', ['record' => $record])),
+                    ->url(fn($record) => BankAccountResource::getUrl('reconcile', ['record' => $record])),
             ]);
     }
 
