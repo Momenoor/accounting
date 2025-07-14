@@ -32,30 +32,18 @@ class TransactionsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('journalEntry.entry_date')
+                Tables\Columns\TextColumn::make('transactions.entry_date')
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('journalEntry.description')
                     ->limit(30),
                 Tables\Columns\TextColumn::make('debit')
-                    ->money(),
+                    ->money('AED'),
                 Tables\Columns\TextColumn::make('credit')
-                    ->money(),
+                    ->money('AED'),
             ])
             ->filters([
                 //
-            ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make(),
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
             ]);
     }
 }

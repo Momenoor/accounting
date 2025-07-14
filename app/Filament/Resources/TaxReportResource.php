@@ -17,6 +17,8 @@ class TaxReportResource extends Resource
 {
     protected static ?string $model = TaxReport::class;
 
+    protected static ?string $navigationGroup = 'Tax Management';
+
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
     public static function form(Form $form): Form

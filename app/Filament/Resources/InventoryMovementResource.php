@@ -17,6 +17,8 @@ class InventoryMovementResource extends Resource
 {
     protected static ?string $model = InventoryMovement::class;
 
+    protected static ?string $navigationGroup = 'Inventory Management';
+
     protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-up';
 
     public static function form(Form $form): Form

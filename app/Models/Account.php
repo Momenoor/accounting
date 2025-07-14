@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
 use Kalnoy\Nestedset\NodeTrait;
 
 class Account extends Model
@@ -23,6 +25,26 @@ class Account extends Model
         'opening_balance' => 'float',
         'current_balance' => 'float',
     ];
+
+    protected static function booted(): void
+    {
+        static::deleting(function ($account) {
+            if (
+                $account->bankAccounts()->exists() ||
+                $account->transactions()->exists()
+            ) {
+                Notification::make()
+                    ->title("You can't delete this account")
+                    ->body("It has related bank accounts or transactions.")
+                    ->danger()
+                    ->send();
+
+                throw ValidationException::withMessages([
+                    'account' => "Deletion blocked: related records exist.",
+                ]);
+            }
+        });
+    }
 
     public function transactions(): HasMany
     {

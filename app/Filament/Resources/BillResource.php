@@ -29,6 +29,8 @@ class BillResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-receipt-refund';
 
+    protected static ?string $navigationGroup = 'Transactions & Journals';
+
     public static function form(Form $form): Form
     {
         return $form

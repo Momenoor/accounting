@@ -19,6 +19,8 @@ class BudgetResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
+    protected static ?string $navigationGroup = 'Budgeting & Expense Management';
+
     public static function form(Form $form): Form
     {
         return $form

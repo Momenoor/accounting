@@ -17,6 +17,8 @@ class TaxPaymentResource extends Resource
 {
     protected static ?string $model = TaxPayment::class;
 
+    protected static ?string $navigationGroup = 'Tax Management';
+
     protected static ?string $navigationIcon = 'heroicon-o-credit-card';
 
     public static function form(Form $form): Form

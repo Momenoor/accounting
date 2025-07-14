@@ -19,6 +19,8 @@ class FiscalYearResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
+    protected static ?string $navigationGroup = 'Accounting & Financial Setup';
+
     public static function form(Form $form): Form
     {
         return $form

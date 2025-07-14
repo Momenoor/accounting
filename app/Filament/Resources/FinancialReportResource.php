@@ -17,6 +17,8 @@ class FinancialReportResource extends Resource
 {
     protected static ?string $model = FinancialReport::class;
 
+    protected static ?string $navigationGroup = 'Financial Reporting';
+
     protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
 
     public static function form(Form $form): Form

@@ -17,6 +17,8 @@ class ProductCategoryResource extends Resource
 {
     protected static ?string $model = ProductCategory::class;
 
+    protected static ?string $navigationGroup = 'Inventory Management';
+
     protected static ?string $navigationIcon = 'heroicon-o-tag';
 
     public static function form(Form $form): Form

@@ -23,6 +23,8 @@ class DirectExpenseResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationLabel = 'Direct Expense';
 
+    protected static ?string $navigationGroup = 'Budgeting & Expense Management';
+
     public static function form(Form $form): Form
     {
         return $form

@@ -8,6 +8,7 @@ use App\Models\BankAccount;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Services\AccountService;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
@@ -27,11 +28,11 @@ use InvalidArgumentException;
 
 class OpeningBalanceSetup extends Page implements HasForms
 {
-    use InteractsWithForms, InteractsWithFormActions;
+    use InteractsWithForms, InteractsWithFormActions, HasPageShield;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static string $view = 'filament.pages.opening-balance-setup';
-    protected static ?string $navigationGroup = 'System Settings';
+    protected static ?string $navigationGroup = 'Accounting & Financial Setup';
 
     public ?array $data = [];
     protected $accounts;

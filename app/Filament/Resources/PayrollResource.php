@@ -26,6 +26,8 @@ class PayrollResource extends Resource
 {
     protected static ?string $model = Payroll::class;
 
+    protected static ?string $navigationGroup = 'Human Resources & Payroll';
+
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
 
     public static function form(Form $form): Form

@@ -17,6 +17,8 @@ class InventoryAdjustmentResource extends Resource
 {
     protected static ?string $model = InventoryAdjustment::class;
 
+    protected static ?string $navigationGroup = 'Inventory Management';
+
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-vertical';
 
     public static function form(Form $form): Form

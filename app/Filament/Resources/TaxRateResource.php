@@ -17,6 +17,8 @@ class TaxRateResource extends Resource
 {
     protected static ?string $model = TaxRate::class;
 
+    protected static ?string $navigationGroup = 'Tax Management';
+
     protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
 
     public static function form(Form $form): Form
